@@ -1,0 +1,9 @@
+---
+description: SQL coding conventions
+globs: "**/*.sql"
+alwaysApply: false
+---
+
+Follow the shared SQL instructions:
+
+@.agents/instructions/sql.md

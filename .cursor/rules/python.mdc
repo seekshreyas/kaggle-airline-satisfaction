@@ -1,0 +1,9 @@
+---
+description: Python coding conventions
+globs: "**/*.py"
+alwaysApply: false
+---
+
+Follow the shared Python instructions:
+
+@.agents/instructions/python.md
