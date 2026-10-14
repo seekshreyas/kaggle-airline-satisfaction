@@ -106,55 +106,7 @@ def _(df_in):
             # marginal="box",
             title=f"{numcol} distribution over satisfaction",
         ).show()
-    return
-
-
-@app.cell
-def _(df_in):
-    # inspecting categorical columns
-    for catcol in df_in.loc[:, "gender":"class"].columns.tolist():
-        px.histogram(
-            df_in,
-            x=catcol,
-            color="satisfaction",
-            histfunc='sum',
-            barmode="group",
-        ).show()
-        break
-    return
-
-
-@app.cell
-def _(df_in):
-    # inspecting categorical columns
-    categorical_cols = df_in.loc[:, "gender":"class"].columns.tolist()
-
-    # Create value counts for each categorical column
-    _viz_dfs = []
-    for ccol in categorical_cols:
-        counts = (
-            df_in.groupby([ccol, "satisfaction"])
-            .size()
-            .reset_index(name="count")
-        )
-        counts["column"] = ccol
-        counts = counts.rename(columns={ccol: "value"})
-        _viz_dfs.append(counts)
-
-    _df_categorical = pd.concat(_viz_dfs, ignore_index=True)
-
-    fig = px.bar(
-        _df_categorical,
-        x="value",
-        y="count",
-        color="satisfaction",
-        facet_col="column",
-        facet_col_wrap=3,
-        title="Categorical columns distribution over satisfaction",
-    )
-    fig.update_xaxes(tickangle=45)
-
-    fig
+        # break
     return
 
 

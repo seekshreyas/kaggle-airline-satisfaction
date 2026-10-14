@@ -6,3 +6,4 @@ pixi run sync-agents
 # download dataset
 
 kaggle competitions download -c playground-series-s6e10 -p data/raw
+unzip data/raw/playground-series-s6e10.zip
