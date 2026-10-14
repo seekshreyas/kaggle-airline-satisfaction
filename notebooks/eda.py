@@ -1047,7 +1047,11 @@ def _(ID_COL, TARGET, X_test_enc, final_model, test):
         "id": test[ID_COL],
         TARGET: test_pred
     })
-    SUBMISSION_PATH = f"{KAGGLEDATAFOLDER}/data/interim/submission.csv"
+    SUBMISSION_PATH = Path("data/interim/submission.csv")
+    SUBMISSION_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
     submission.to_csv(
         SUBMISSION_PATH,
         index=False
