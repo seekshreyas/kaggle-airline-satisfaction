@@ -1,5 +1,11 @@
 # Project instructions
 
+
+## General guidelines
+Before starting, develop context by understanding:
+1. Project [README] file
+2. Scan the project directory structure, so you can organize the code or output accordingly. 
+
 ## Environment
 - Manage dependencies with Pixi.
 - Run project commands through `pixi run`.
@@ -29,3 +35,6 @@ Before editing these files, read the corresponding instructions:
 ## Validation
 Use the checks configured in this repository.
 If a required check is unavailable, report that explicitly.
+
+---
+[README]: README.md
