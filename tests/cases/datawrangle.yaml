@@ -1,0 +1,76 @@
+# Declarative test cases for src/datahelpers/datawrangle.py
+#
+# Each top-level key is the function under test; each case has:
+#   id:        short name shown in pytest output
+#   style:     naming style passed to the function (default: simple)
+#   overrides: optional {raw: new} renames that win over the style
+#   expected:  the result (a {raw: normalized} map for column functions)
+#   raises:    instead of `expected`, the error type and a message regex
+
+normalize_name:
+  - id: snake_case_strips_edges_and_collapses_runs
+    name: "  Leg -- room (svc) "
+    style: snake_case
+    expected: leg_room_svc
+
+  - id: unknown_style_raises
+    name: Age
+    style: kebab
+    raises: {error: ValueError, match: Unknown style}
+
+normalize_columns:
+  - id: simple_style_preserves_original_behavior
+    style: simple
+    expected:
+      Age: age
+      Departure/Arrival time convenient: departure/arrival_time_convenient
+      On-board service: on-board_service
+      Type of Travel: type_of_travel
+
+  - id: snake_case_style
+    style: snake_case
+    expected:
+      Age: age
+      Departure/Arrival time convenient: departure_arrival_time_convenient
+      On-board service: on_board_service
+      Type of Travel: type_of_travel
+
+  - id: airline_competition_headers
+    style: snake_case
+    expected:
+      id: id
+      Age: age
+      Flight Distance: flight_distance
+      Inflight wifi service: inflight_wifi_service
+      Departure/Arrival time convenient: departure_arrival_time_convenient
+      Ease of Online booking: ease_of_online_booking
+      Gate location: gate_location
+      Food and drink: food_and_drink
+      Online boarding: online_boarding
+      Seat comfort: seat_comfort
+      Inflight entertainment: inflight_entertainment
+      On-board service: on_board_service
+      Leg room service: leg_room_service
+      Baggage handling: baggage_handling
+      Checkin service: checkin_service
+      Cleanliness: cleanliness
+      Departure Delay in Minutes: departure_delay_in_minutes
+      Arrival Delay in Minutes: arrival_delay_in_minutes
+      Gender: gender
+      Customer Type: customer_type
+      Type of Travel: type_of_travel
+      Class: class
+      satisfaction: satisfaction
+
+column_mapping:
+  - id: overrides_win
+    style: snake_case
+    overrides: {Age: age_years}
+    expected:
+      Age: age_years
+      Type of Travel: type_of_travel
+
+  - id: collision_raises
+    style: snake_case
+    columns: [Seat Comfort, seat-comfort]
+    raises: {error: ValueError, match: both normalize}

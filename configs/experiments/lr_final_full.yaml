@@ -1,0 +1,14 @@
+# Phase 4: winner on the full training data, then one holdout check and the submission.
+# NOTE: `extends` points at the Phase 3 winner; set model.params to the chosen grid point.
+name: lr_final_full
+description: Final features and model on full data (holdout still excluded from CV)
+extends: lr_08_regularization.yaml
+
+data:
+  subset: full
+
+model:
+  grid: null                                # no grid: a single fit with the chosen params
+
+score_holdout: true                         # score the 20% holdout once
+predict_test: true                          # refit on all labelled rows, write submission

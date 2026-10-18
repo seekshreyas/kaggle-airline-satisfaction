@@ -1,0 +1,85 @@
+# Declarative test cases for src/datahelpers/splits.py
+#
+# Tests run on synthetic data: ids 0..n_rows-1, target = 1 for every id where
+# (id * 7) % 1000 < positive_rate * 1000 (spread out, no real data).
+
+synthetic:
+    n_rows: 20000
+    positive_rate: 0.444
+
+# Pinned values: if these change, the hashing algorithm changed and every split moves.
+hash_uniform:
+    - id: pinned_blake2b_values
+      keys: [0, 1, 2]
+      salt: s6e10-v1/cv
+      expected: [0.257951, 0.510638, 0.436706]
+      decimals: 6
+
+    - id: empty_salt_rejected
+      keys: [0]
+      salt: ""
+      via_purpose: holdout # goes through purpose_salt, which rejects empty salts
+      raises: { error: ValueError, match: non-empty }
+
+hash_split:
+    - id: stratified_exact_fraction_per_class
+      frac: 0.20
+      salt: s6e10-v1/holdout
+      stratify: true
+      expect: { frac_per_class: 0.20, tolerance: 0.0001 }
+
+    - id: unstratified_close_to_fraction
+      frac: 0.20
+      salt: s6e10-v1/holdout
+      stratify: false
+      expect: { frac: 0.20, tolerance: 0.01 }
+
+    - id: bad_fraction_rejected
+      frac: 1.5
+      salt: s6e10-v1/holdout
+      stratify: true
+      raises: { error: ValueError, match: frac must be }
+
+hash_folds:
+    - id: stratified_4_folds_balanced
+      n_splits: 4
+      salt: s6e10-v1/cv
+      stratify: true
+      expect: { max_size_diff: 2, max_rate_diff: 0.001 }
+
+    - id: unstratified_4_folds_roughly_equal
+      n_splits: 4
+      salt: s6e10-v1/cv
+      stratify: false
+      expect: { max_size_diff: 400, max_rate_diff: 0.03 }
+
+# Behaviour of the salt itself (checked on hash_folds with stratify: true).
+salt_properties:
+    - id: same_salt_same_folds
+      salt_a: s6e10-v1/cv
+      salt_b: s6e10-v1/cv
+      expect: { changed_share_max: 0.0 }
+
+    - id: new_salt_reshuffles
+      salt_a: s6e10-v1/cv
+      salt_b: s6e10-v2/cv
+      expect: { changed_share_min: 0.6 } # ~75% expected with 4 folds
+
+    - id: row_order_does_not_matter
+      salt_a: s6e10-v1/cv
+      salt_b: s6e10-v1/cv
+      shuffle_rows: true
+      expect: { changed_share_max: 0.0 }
+
+# End-to-end on a competition-shaped config (only the keys assign_splits reads).
+assign_splits:
+    - id: holdout_dev_folds_are_consistent
+      config:
+          target: target
+          randomization: { salt: s6e10-v1, key: id, stratify: true }
+          splits: { holdout_frac: 0.20, dev_frac: 0.25 }
+          cv: { n_splits: 4 }
+      expect:
+          holdout_share: 0.20
+          dev_share: 0.20 # 25% of the remaining 80%
+          tolerance: 0.001

@@ -1,0 +1,12 @@
+# Phase 2 · rung 04: splines for the age inverted-U and the ~1,500 mi distance threshold.
+name: lr_04_splines
+description: Splines on age and flight distance
+extends: lr_03_delays.yaml
+
+encode:
+  continuous:
+    steps:
+      - impute: {strategy: median}
+      - log1p: {cols: [departure_delay_in_minutes, arrival_delay_in_minutes]}
+      - spline: {cols: [age, flight_distance], n_knots: 6, degree: 3}
+      - scale: {method: standard}

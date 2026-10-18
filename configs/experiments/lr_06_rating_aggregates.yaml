@@ -1,0 +1,19 @@
+# Phase 2 · rung 06: overall-experience summary of the 13 ratings.
+name: lr_06_rating_aggregates
+description: N/A-aware rating stats overall and per rating group
+extends: lr_05_crosses.yaml
+
+derive:
+  rating_aggregates:
+    cols: "@ordinal"
+    groups: "@rating_groups"
+    exclude_zero: true                      # 0 = N/A, so leave it out of the stats
+    stats: [mean, min, max, std]
+    counts: [n_zero, n_ge4]
+
+encode:
+  derived_numeric:
+    cols: "@derived_numeric"
+    steps:
+      - impute: {strategy: median}          # stats are NaN when every rating is 0
+      - scale: {method: standard}

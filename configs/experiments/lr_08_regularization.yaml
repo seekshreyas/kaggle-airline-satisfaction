@@ -1,0 +1,11 @@
+# Phase 3: features fixed at the Phase 2 winner, tune the model.
+# NOTE: `extends` points at the Phase 2 winner; update it after the ladder review.
+name: lr_08_regularization
+description: Grid over C and l1_ratio (L2 vs elastic net)
+extends: lr_07_rating_crosses.yaml
+
+model:
+  params: {solver: saga, max_iter: 3000}    # saga supports any l1_ratio
+  grid:                                     # one CV run per combination (4 x 2 = 8)
+    C: [0.01, 0.1, 1.0, 10.0]
+    l1_ratio: [0.0, 0.5]

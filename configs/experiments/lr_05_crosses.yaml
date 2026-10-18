@@ -1,0 +1,16 @@
+# Phase 2 · rung 05: business class only helps business travellers.
+name: lr_05_crosses
+description: Class x type of travel and class x customer type crosses
+extends: lr_04_splines.yaml
+
+derive:
+  cross:
+    pairs:
+      - [class, type_of_travel]
+      - [class, customer_type]
+
+encode:
+  crosses:
+    cols: "@derived_categorical"
+    steps:
+      - onehot: {handle_unknown: ignore}

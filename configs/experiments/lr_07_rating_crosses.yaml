@@ -1,0 +1,12 @@
+# Phase 2 · rung 07: rating effects may differ by trip purpose.
+name: lr_07_rating_crosses
+description: Type of travel x {wifi, online boarding} crosses
+extends: lr_06_rating_aggregates.yaml
+
+derive:
+  cross:
+    pairs:                                  # lists replace, so the rung 05 pairs are restated
+      - [class, type_of_travel]
+      - [class, customer_type]
+      - [type_of_travel, inflight_wifi_service]
+      - [type_of_travel, online_boarding]

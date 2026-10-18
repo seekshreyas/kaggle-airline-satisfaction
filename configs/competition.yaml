@@ -1,0 +1,89 @@
+# ---------------------------------------------------------------------------
+# Competition settings: the only file to rewrite for a new competition.
+# Every experiment in configs/experiments/ inherits from this file.
+# ---------------------------------------------------------------------------
+
+competition: playground-series-s6e10 # kaggle slug (used by `alfred submit`)
+
+data:
+    dir: data/raw/playground-series-s6e10 # relative to project root; $DIR_KAGGLE_REL overrides
+    files:
+        train: train.csv
+        test: test.csv
+        sample_submission: sample_submission.csv
+
+id_col: id
+target: satisfaction
+task: binary
+metric: roc_auc # primary metric, used for the keep rule
+extra_metrics: [log_loss, accuracy] # logged, not optimized
+seed: 42 # model random_state only; splits and folds use salted hashing (below)
+
+# Column renaming, applied to train/test/sample_submission on load.
+columns:
+    style: snake_case # see datawrangle.NAME_STYLES
+    overrides: {} # {raw name: new name}, wins over style
+
+# Column roles, using names AFTER renaming. "@<group>" in experiments expands from here.
+schema:
+    continuous:
+        - age
+        - flight_distance
+        - departure_delay_in_minutes
+        - arrival_delay_in_minutes
+    ordinal: # ratings 0-5; 0 means "not applicable"
+        - inflight_wifi_service
+        - departure_arrival_time_convenient
+        - ease_of_online_booking
+        - gate_location
+        - food_and_drink
+        - online_boarding
+        - seat_comfort
+        - inflight_entertainment
+        - on_board_service
+        - leg_room_service
+        - baggage_handling # 1-5 only (no zeros)
+        - checkin_service
+        - cleanliness
+    categorical:
+        - gender
+        - customer_type
+        - type_of_travel
+        - class
+
+# Domain grouping of ratings, used by the rating_aggregates block ("@rating_groups").
+rating_groups:
+    digital: [inflight_wifi_service, ease_of_online_booking, online_boarding]
+    comfort:
+        [seat_comfort, inflight_entertainment, leg_room_service, cleanliness]
+    service:
+        [on_board_service, checkin_service, baggage_handling, food_and_drink]
+    airport: [gate_location, departure_arrival_time_convenient]
+
+# Randomization: every split and fold is decided by hashing each row's key with a
+# salt, not by a random seed. Same salt -> identical assignments, whatever the row
+# order. Change the salt to reshuffle everything. Each purpose hashes with its own
+# derived salt ("<salt>/holdout", "<salt>/dev", "<salt>/cv"), so they're independent.
+randomization:
+    salt: "s6e10-v1"
+    key: id # column that is hashed
+    stratify: true # exact class balance within each split and fold
+
+# Data splits (hash-based, see `randomization`).
+splits:
+    dev_frac: 0.25 # share of the remaining train used in Phases 2-3
+    holdout_frac: 0.20 # set aside from train; scored once in Phase 4
+
+# K-fold cross-validation, used by every iteration step unless an experiment overrides it.
+cv:
+    n_splits: 4 # fold = hash rank of "<salt>/cv" + key, so no separate shuffle flag
+
+# Keep rule for the feature ladder.
+keep_rule:
+    min_gain: 0.0005 # minimum OOF AUC improvement over the parent
+    must_beat_fold_std: true # and the gain must exceed the fold std
+
+paths:
+    experiments_dir: reports/experiments
+    submissions_dir: data/submissions
+    holdout_ids: data/interim/holdout_ids.parquet

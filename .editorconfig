@@ -23,3 +23,8 @@ indent_size = 4
 indent_size = 4
 trim_trailing_whitespace = true
 end_of_line = lf
+
+[*.yaml, *.yml]
+indent_size = 4
+trim_trailing_whitespace = true
+end_of_line = lf

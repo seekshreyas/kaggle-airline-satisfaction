@@ -1,0 +1,23 @@
+# Phase 2 · rung 03: delay handling (skew, missing arrival delay).
+# NOTE: `extends` points at the 01/02 winner; update it after reviewing those runs.
+name: lr_03_delays
+description: Missing flag, log1p on delays, delay difference
+extends: lr_01_ratings_onehot.yaml
+
+derive:
+  missing_flag: {cols: [arrival_delay_in_minutes]}
+  delay_features: {}                        # adds delay_diff, is_delayed, total_delay
+
+encode:
+  continuous:
+    steps:
+      - impute: {strategy: median}
+      - log1p: {cols: [departure_delay_in_minutes, arrival_delay_in_minutes]}
+      - scale: {method: standard}
+  derived_numeric:
+    cols: "@derived_numeric"
+    steps:
+      - scale: {method: standard}
+  flags:
+    cols: "@derived_flags"
+    steps: [passthrough]

@@ -1,0 +1,34 @@
+# Phase 2 · rung 00: reference point. Simple encodings, model held fixed from here on.
+name: lr_00_baseline
+description: Impute + scale numerics, ratings as numbers, one-hot categoricals
+extends: ../competition.yaml
+
+data:
+  subset: dev                               # dev (Phases 2-3) | full (Phase 4)
+
+# Stateless, row-wise blocks that add columns. Keyed by block name, so a child
+# experiment can add a block without restating the others.
+derive: {}
+
+# Stateful encoders, one group per key, fit inside each CV fold.
+# A child can override one group (e.g. only `ratings`) and inherit the rest.
+encode:
+  continuous:
+    cols: "@continuous"
+    steps:
+      - impute: {strategy: median}
+      - scale: {method: standard}
+  ratings:
+    cols: "@ordinal"
+    steps:
+      - scale: {method: standard}
+  categorical:
+    cols: "@categorical"
+    steps:
+      - onehot: {drop: if_binary, handle_unknown: ignore}
+
+remainder: drop                             # columns not in any group are dropped
+
+model:
+  name: logreg
+  params: {C: 1.0, l1_ratio: 0.0, solver: lbfgs, max_iter: 3000}
