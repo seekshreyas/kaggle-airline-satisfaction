@@ -65,7 +65,7 @@ with app.setup:
     print(f"Kaggle directory: {DIR_KAGGLE}")
 
     sys.path.insert(1, DIR_PROJECT)
-    sv.config_parser.read(DIR_PROJECT + '/configs/sweetviz_config.ini')
+    sv.config_parser.read(DIR_PROJECT + "/configs/sweetviz_config.ini")
 
     # Notebook status
     NOTEBOOKSTATUS = "dev"
@@ -127,7 +127,7 @@ def _(datawrangle):
     TARGET = "satisfaction"
     ID_COL = "id"
     RANDOM_STATE = 42
-    return ID_COL, TARGET, df_train
+    return (df_train,)
 
 
 @app.cell(hide_code=True)
@@ -146,29 +146,31 @@ def _():
     return
 
 
-@app.cell
-def _(ID_COL, TARGET, df_train):
+app._unparsable_cell(
+    r"""
     sv_feature_config = sv.FeatureConfig(skip=ID_COL)
 
-    # analyze: training columns vs TARGET
-    # sv.analyze([df_train,'Train'],
-    #            target_feat=TARGET,
-    #            feat_cfg=sv_feature_config)\
-    #     .show_html(DIR_PROJECT + "/reports/eda/report_train_vs_target.html")
+    analyze: training columns vs TARGET
+    sv.analyze([df_train,'Train'],
+               target_feat=TARGET,
+               feat_cfg=sv_feature_config)\
+        .show_html(DIR_PROJECT + "/reports/eda/report_train_vs_target.html")
 
-    # # compare: train vs test
-    # sv.compare([df_train, "Train"],
-    #            [df_test, "Test"],
-    #            target_feat=TARGET,
-    #            feat_cfg=sv_feature_config)\
-    #     .show_html(DIR_PROJECT + "/reports/eda/comparison_report_train_vs_test.html")
+    # compare: train vs test
+    sv.compare([df_train, "Train"],
+               [df_test, "Test"],
+               target_feat=TARGET,
+               feat_cfg=sv_feature_config)\
+        .show_html(DIR_PROJECT + "/reports/eda/comparison_report_train_vs_test.html")
 
     # compare intra
     sv.compare_intra(df_train, 
                      df_train["class"] == 'Eco', ["Economy", "Non-Economy"], 
                     target_feat=TARGET,feat_cfg=sv_feature_config)\
         .show_html(DIR_PROJECT + "/reports/eda/intro_report_train_with_ecoclass.html")
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell
