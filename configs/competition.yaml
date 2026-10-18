@@ -51,6 +51,40 @@ schema:
         - type_of_travel
         - class
 
+# Plain-language names for reports and charts (raw/derived column -> label).
+display_names:
+    age: Age
+    flight_distance: Flight distance
+    departure_delay_in_minutes: Departure delay
+    arrival_delay_in_minutes: Arrival delay
+    inflight_wifi_service: Wi-Fi rating
+    departure_arrival_time_convenient: Schedule convenience rating
+    ease_of_online_booking: Online booking rating
+    gate_location: Gate location rating
+    food_and_drink: Food & drink rating
+    online_boarding: Online boarding rating
+    seat_comfort: Seat comfort rating
+    inflight_entertainment: Entertainment rating
+    on_board_service: On-board service rating
+    leg_room_service: Leg room rating
+    baggage_handling: Baggage handling rating
+    checkin_service: Check-in rating
+    cleanliness: Cleanliness rating
+    gender: Gender
+    customer_type: Customer type
+    type_of_travel: Trip type
+    class: Cabin class
+    rating_mean: Average rating
+    rating_min: Lowest rating
+    rating_max: Highest rating
+    rating_std: Rating spread
+    rating_n_zero: Services left unrated
+    rating_n_ge4: Services rated 4-5
+    grp_digital_mean: Avg digital rating
+    grp_comfort_mean: Avg comfort rating
+    grp_service_mean: Avg service rating
+    grp_airport_mean: Avg airport rating
+
 # Domain grouping of ratings, used by the rating_aggregates block ("@rating_groups").
 rating_groups:
     digital: [inflight_wifi_service, ease_of_online_booking, online_boarding]
@@ -80,10 +114,13 @@ cv:
 
 # Keep rule for the feature ladder.
 keep_rule:
-    min_gain: 0.0005 # minimum OOF AUC improvement over the parent
-    must_beat_fold_std: true # and the gain must exceed the fold std
+    min_gain: 0.0005 # minimum mean per-fold AUC improvement over the parent
+    # The gain must also exceed this noise level:
+    #   paired_std: std of per-fold (child - parent) deltas. Same folds => fold difficulty cancels.
+    #   fold_std:   std of the child's fold scores (stricter; rejects most gains < ~0.002 here)
+    #   none:       min_gain only
+    noise: paired_std
 
 paths:
     experiments_dir: reports/experiments
     submissions_dir: data/submissions
-    holdout_ids: data/interim/holdout_ids.parquet

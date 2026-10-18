@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Approved · in progress |
+| **Status** | Phases 0–4 complete · first pipeline submission scored 0.94845 (public LB) |
 | **Revised** | 2026-10-17 |
 | **Competition** | [playground-series-s6e10](https://www.kaggle.com/competitions/playground-series-s6e10/overview), Predicting Airline Satisfaction |
 | **Metric** | ROC AUC on predicted probabilities |
@@ -56,45 +56,83 @@ Tick a box when the item is done **and** its check has actually run.
       iteration step in `configs/experiments/` (k-fold CV with `n_splits: 4`)
 - [x] Salted-hash randomization for holdout, dev subset and folds (`randomization.salt`
       in `competition.yaml`) → `src/datahelpers/splits.py` + YAML test cases
-- [ ] Review and approve the config drafts
+- [x] Review and approve the config drafts
 
 ### Phase 1 · Data and splits
-- [ ] Load train, test and sample submission with DuckDB, and snake_case the columns
-- [ ] Split off a fixed **holdout** (20% of train, stratified, salted hash) and save its ids
-- [ ] Draw a fixed **dev subset** (25% of the rest, stratified) for fast iteration
-- [ ] Sanity check: row counts, target rate in each split, nulls
+- [x] Load train, test and sample submission with DuckDB, and snake_case the columns
+      → `load_competition_data()`, CLI `python -m src.datahelpers.dataloader profile`
+- [x] Split off a fixed **holdout** (20% of train, stratified, salted hash). Ids aren't
+      saved: the hash recomputes the same split in ~2 s
+- [x] Draw a fixed **dev subset** (25% of the rest, stratified) for fast iteration
+- [x] Sanity check: row counts, target rate in each split, nulls (`bruce_v1.py` Phase 1)
 
 ### Phase 2 · Feature engineering (model fixed, dev subset)
-- [ ] `lr_00` baseline: impute + scale numerics, ratings as numbers, one-hot categoricals
-- [ ] `lr_01` ratings as one-hot categories
-- [ ] `lr_02` ratings as numbers + `is0` / `ge4` flags (alternative to 01)
-- [ ] `lr_03` delays: missing flag, `log1p`, delay difference
-- [ ] `lr_04` splines on age and flight distance
-- [ ] `lr_05` crosses: class × type of travel, class × customer type
-- [ ] `lr_06` rating aggregates (mean, min, max, counts, group means; zeros excluded)
-- [ ] `lr_07` crosses: type of travel × {wifi, online boarding}
-- [ ] Review the leaderboard together and pick the winning feature set
+- [x] `lr_00` baseline: impute + scale numerics, ratings as numbers, one-hot categoricals → **0.92028**
+- [x] `lr_01` ratings as one-hot categories → **0.94773, keep (current winner)**
+- [x] `lr_02` ratings as numbers + `is0` / `ge4` flags (alternative to 01) → 0.94203, loses to 01
+- [x] `lr_03` delays: missing flag, `log1p`, delay difference → +0.00010, revert
+- [x] `lr_04` splines on age and flight distance → +0.00019, revert
+- [x] `lr_05` crosses: class × type of travel, class × customer type → +0.00000, revert
+- [x] `lr_06` rating aggregates (mean, min, max, counts, group means; zeros excluded) →
+      **0.94825, +0.00052, 4/4 folds better → keep (current winner)**
+- [x] `lr_07` crosses: type of travel × {wifi, online boarding} → +0.00032 (4/4 folds), below
+      min_gain → revert. Personal Travel AUC only 0.800 → 0.802
+- [x] **Keep rule decided:** gain ≥ 0.0005 and > std of per-fold deltas vs the parent
+      (`keep_rule.noise: paired_std`; fold std is 10–80× larger because folds are shared)
+- [x] **Diagnostics for every run** (notebook section + `python alfred.py diagnose <name>`
+      → PNGs in `reports/plots/<run_id>/`): ROC, calibration, score distribution, confusion, per-fold
+      AUC, AUC by segment, coefficients, each overlaid on a comparison run
+- [x] **Executive deck for Phase 2** (Deckset markdown): `pixi run report
+      configs/reports/phase2_feature_engineering.yaml` → `reports/phase2_feature_engineering.md`
+      + PNG charts in `reports/plots/`. All narrative numbers come from the saved runs
+- [x] Pick the winning feature set → **`lr_06_rating_aggregates` (97 features, 0.94825)**
+
+### Phase 2b · Visualization library (`src/viz/`)
+- [x] Split `src/modeling/plots.py` into themed modules under `src/viz/` (see §3.9)
+- [x] One shared theme (validated palette, base styling) and one export module (slide PNGs)
+- [x] Plot functions take data (tidy DataFrames or `RunDiagnostics`) and return a
+      `go.Figure`; no file I/O, no dependency on `src.reporting` (`drivers_figure` now takes
+      a `label` function)
+- [x] Catalog of every public plot (`src.viz.catalog()`, 12 plots), so new plots are discoverable
+- [x] Smoke test that builds every catalogued plot from synthetic data (`tests/test_viz.py`,
+      inputs in `tests/cases/viz.yaml`); it fails if a `*_figure` function isn't catalogued
+- [x] Move callers (notebook, `alfred.py`, report builder) to `src.viz`; remove
+      `src/modeling/plots.py`; regenerate the Phase 2 deck and check the PNGs are unchanged
+      (all 7 PNGs and the markdown are byte-identical)
 
 ### Phase 3 · Model iteration (features fixed, dev subset)
-- [ ] Regularization grid: `C ∈ {0.01, 0.1, 1, 10}` × `l1_ratio ∈ {0, 0.5}`
-- [ ] Diagnostics: ROC, calibration, top coefficients, AUC by segment
-- [ ] Pick the final model settings
+- [x] Regularization grid: `C ∈ {0.01, 0.1, 1, 10}` × {L2 (`lbfgs`), L1 (`liblinear`)}.
+      Elastic net (`saga`, `l1_ratio` 0.5) was dropped: one grid point took >10 min on the dev
+      subset. `model.grid` now accepts a list of dicts so each penalty gets a compatible solver
+- [x] Diagnostics: grid chart (`viz.grid_figure`), plus the per-run diagnostics. Result: the
+      model is saturated. `C ≥ 1` changes nothing, `C = 0.01` costs 0.0005–0.001, L1 at best
+      ties L2 (+0.00001) and is 5–7× slower
+- [x] Pick the final model settings → **`C = 1`, L2, `lbfgs`** (simplest, fastest)
 
 ### Phase 4 · Full data and ship
-- [ ] Re-run the winner with CV on the full training data (holdout still excluded)
-- [ ] Score the holdout **once** and compare it with CV
-- [ ] Refit on all labelled data, predict test, and validate the submission file
-- [ ] Submit to Kaggle (manual, after your go-ahead) and record the public LB score
+- [x] Re-run the winner with CV on the full training data (holdout still excluded) →
+      **0.94925 ± 0.00039** on 559,708 rows (`fold_full`, own salt)
+- [x] Score the holdout **once** and compare it with CV → **0.94880** (−0.00045 vs CV, about one
+      fold std: no sign of overfitting the folds). A guard refuses to score it again
+- [x] Refit on all labelled data, predict test, and validate the submission file →
+      `data/submissions/20261017-231328_lr_final_full.csv` (299,844 rows, valid)
+- [x] Submit to Kaggle (manual, after your go-ahead) and record the public LB score →
+      **0.94845** public (CV 0.94925 · holdout 0.94880: consistent)
 
 ### Reusable code (promoted from the notebook as each phase completes)
-- [ ] `src/utils`: project root, YAML config loading (`extends`), logging
-- [ ] `src/datahelpers`: data loader, `prepare_frames`, holdout and dev splits
-- [ ] `src/features`: registry of feature blocks + pipeline builder
-- [ ] `src/modeling`: model registry, metrics, CV with OOF, experiment runner, diagnostics
-- [ ] `src/submission.py`: build and validate a submission
-- [ ] `alfred.py` CLI: `cv`, `train`, `leaderboard`, `submit` (submit asks y/N)
-- [ ] Tests: config merging, features (no leakage, same columns on train and test),
-      CV (folds are reproducible), submission validation
+- [x] `src/utils`: project root, YAML config loading (`extends`, `@refs`, hash), logging
+- [x] `src/datahelpers`: data loader, profile, holdout / dev / fold splits
+- [x] `src/features`: registry of feature blocks + pipeline builder
+- [x] `src/modeling`: model registry, metrics, CV with OOF, experiment runner, diagnostics
+      (incl. paired per-fold deltas)
+- [x] `src/viz`: themed plotting library (Phase 2b)
+- [x] `src/reporting`: Deckset markdown builder, plain-language labels, Phase 2 deck
+- [x] `src/submission.py`: build and validate a submission (+ CLI `validate`)
+- [x] `alfred.py` CLI: `cv`, `leaderboard`, `ladder`, `features` (+ pixi tasks)
+- [x] `alfred.py` CLI: `train`, `submit` (submit validates, then asks y/N)
+- [x] Tests: config merging, features (no leakage, same columns on train and test),
+      CV (folds are reproducible)
+- [x] Tests: submission validation, grid expansion, leaderboard column alignment
 
 ### Out of scope (for now)
 Tree and boosting models, target encoding, Optuna, blending or stacking, MLflow, and
@@ -169,7 +207,7 @@ encode:
 `configs/competition.yaml` holds what's competition-specific: data paths, id and target
 columns, metric, salt and seed, column naming (`snake_case`) and the column schema (continuous,
 ordinal, categorical), rating groups, splits, CV settings and the keep rule. It's the
-only file you rewrite for a new competition. `tests/test_configs.py` checks that every
+only file you rewrite for a new competition. `tests/test_config_files.py` checks that every
 config parses, every `extends` target exists, the schema matches the real headers, and
 every `@ref` resolves.
 
@@ -199,15 +237,17 @@ Each rung comes from an EDA observation (satisfaction rate on train):
 | 05 | Business class + business travel 73%; business class + personal travel 11% | Interaction effect |
 | 06 | 13 weak, correlated ratings | An overall-experience summary is easier for LR to use |
 
-**Keep rule:** a rung stays if OOF AUC improves by **≥ 0.0005** and the gain is larger
-than the fold standard deviation. Otherwise it's reverted. Rungs 01 and 02 compete; the
+**Keep rule:** a rung stays if CV AUC improves by **≥ 0.0005** and the gain is larger
+than the std of its per-fold differences from the parent (same folds, so fold difficulty
+cancels). Otherwise it's reverted. Rungs 01 and 02 compete; the
 next rung builds on the winner (or on both, if they combine well).
 
 ### 3.6 Model
 
 `LogisticRegression` with `C` and `l1_ratio`. In sklearn 1.9, `penalty` is deprecated:
-use `l1_ratio=0` for L2, `0 < l1_ratio < 1` for elastic net (`solver="saga"`), and
-`C=np.inf` for no penalty. Metrics logged: ROC AUC (primary), log loss, accuracy at 0.5.
+use `l1_ratio=0` for L2 (`lbfgs`, ~6 s per CV on the dev subset), `l1_ratio=1` for L1
+(`liblinear`, ~47 s), and `C=np.inf` for no penalty. Elastic net needs `saga`, which is
+too slow here (>10 min per CV). Metrics logged: ROC AUC (primary), log loss, accuracy at 0.5.
 
 ### 3.7 Run artifacts
 
@@ -225,15 +265,39 @@ src/utils/        paths · config · logging
 src/datahelpers/  dataloader · datawrangle (normalize_columns, prepare_frames, splits)
 src/features/     registry · derive · encode · domain · build
 src/modeling/     models · metrics · validate · train · experiment · diagnostics
+src/viz/          theme · export · classification · experiments · explain · segments · dashboards
+src/reporting/    deckset (markdown builder) · labels · feature_report
 src/submission.py
-alfred.py         typer CLI
+alfred.py         typer CLI (cv · ladder · leaderboard · diagnose · report)
 tests/            synthetic-data tests (no private data)
 ```
 
 Every module is importable from the notebook and runnable from the command line with
 typer, for example `pixi run python -m src.datahelpers.datawrangle columns <csv>`.
 
-### 3.9 Risks
+### 3.9 Visualization library (`src/viz/`)
+
+Diagnostics (`src/modeling/diagnostics.py`) **compute** tables; `src/viz/` **draws** them.
+Reports and notebooks only compose figures.
+
+| Module | Contents |
+|---|---|
+| `theme.py` | Validated palette (blue / orange / red / gray, blue ramp), class and verdict colors, `style()` base layout, run-vs-comparison line styles |
+| `export.py` | `for_slides()` (white surface, large type, no title), `save_png()` |
+| `classification.py` | Single-run model quality: ROC, calibration, score distribution, confusion |
+| `experiments.py` | Across runs: ladder, paired fold deltas, per-fold scores, gains per idea |
+| `explain.py` | Coefficients (technical) and drivers (plain language) |
+| `segments.py` | AUC within segments: grouped (notebook) and ranked (deck) |
+| `dashboards.py` | `diagnostic_figures()`: the standard set for one run |
+
+**Adding a plot:**
+1. Put the function in the module that matches its job, or start a new module.
+2. Take data in, return a `go.Figure`, and finish with `theme.style(fig, title)`.
+   Use the theme's colors only. Keep file I/O out.
+3. Add it to `CATALOG` in `src/viz/__init__.py`. The smoke test then builds it from
+   synthetic data.
+
+### 3.10 Risks
 
 | Risk | Mitigation |
 |---|---|
@@ -241,7 +305,7 @@ typer, for example `pixi run python -m src.datahelpers.datawrangle columns <csv>
 | Overfitting CV by climbing many rungs | Fixed folds, a minimum-gain rule, and the holdout check in Phase 4 |
 | Config typos fail silently | Validate block names, params and column references up front |
 
-### 3.10 Decisions log
+### 3.11 Decisions log
 
 | # | Decision |
 |---|---|
@@ -255,3 +319,5 @@ typer, for example `pixi run python -m src.datahelpers.datawrangle columns <csv>
 | D8 | Columns are renamed with `normalize_columns(df, style="snake_case")`; the default `simple` style keeps `eda.py` unchanged |
 | D9 | Staged iteration: features on a dev subset → model on a dev subset → full data. A 20% holdout is scored once; Kaggle test is used only in Phase 4 |
 | D10 | Splits and folds are assigned by a salted hash of `id` (salt configurable in YAML), not a random seed |
+| D11 | Keep rule uses paired noise (std of per-fold deltas vs the parent), configurable via `keep_rule.noise` |
+| D12 | Plots live in `src/viz/`, split by job; diagnostics compute, viz draws, reports compose |

@@ -1,0 +1,29 @@
+# Synthetic inputs for the src/viz smoke test (no real data).
+
+run:
+    n_rows: 400
+    segments: # column -> values (cycled over rows)
+        class: [Business, Eco, Eco Plus]
+        type_of_travel: [Business travel, Personal Travel]
+    features: [inflight_wifi_service_0, type_of_travel_Personal Travel, num__rating_mean, age]
+
+ladder: # name, parent, cv_mean, cv_std, delta, verdict
+    - [lr_00_baseline, null, 0.920, 0.002, null, reference]
+    - [lr_01_ratings_onehot, lr_00_baseline, 0.947, 0.002, 0.027, keep]
+    - [lr_03_delays, lr_01_ratings_onehot, 0.9471, 0.002, 0.0001, revert]
+
+deltas: # name, parent, fold, delta
+    - [lr_03_delays, lr_01_ratings_onehot, 0, 0.0001]
+    - [lr_03_delays, lr_01_ratings_onehot, 1, 0.0002]
+
+grid: # C, penalty, cv_mean, cv_std
+    - [0.1, L2, 0.9480, 0.002]
+    - [1.0, L2, 0.9482, 0.002]
+    - [0.1, L1, 0.9475, 0.002]
+    - [1.0, L1, 0.9482, 0.002]
+
+# Extra keyword arguments for plots that need more than their data input.
+kwargs:
+    gains: { labels: { lr_01_ratings_onehot: Ratings as levels }, baseline: lr_00_baseline, adopted: [lr_00_baseline, lr_01_ratings_onehot] }
+    paired_deltas: { min_gain: 0.0005 }
+    drivers: { top: 3 }

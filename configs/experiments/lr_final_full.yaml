@@ -1,14 +1,16 @@
 # Phase 4: winner on the full training data, then one holdout check and the submission.
-# NOTE: `extends` points at the Phase 3 winner; set model.params to the chosen grid point.
+# Features: lr_06 (Phase 2 winner). Model: C=1, L2, lbfgs (Phase 3: no grid point beat it).
 name: lr_final_full
 description: Final features and model on full data (holdout still excluded from CV)
-extends: lr_08_regularization.yaml
+label: "Final model on all data" # plain-language name used in reports
+extends: lr_06_rating_aggregates.yaml
 
 data:
-  subset: full
+  subset: full                              # every non-holdout row, folds = fold_full
 
 model:
-  grid: null                                # no grid: a single fit with the chosen params
+  name: logreg
+  params: {C: 1.0, l1_ratio: 0.0, solver: lbfgs, max_iter: 3000}
 
 score_holdout: true                         # score the 20% holdout once
 predict_test: true                          # refit on all labelled rows, write submission

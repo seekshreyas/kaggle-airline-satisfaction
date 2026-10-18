@@ -1,7 +1,8 @@
 # Phase 2 · rung 05: business class only helps business travellers.
 name: lr_05_crosses
 description: Class x type of travel and class x customer type crosses
-extends: lr_04_splines.yaml
+label: "Combine class with trip type" # plain-language name used in reports
+extends: lr_01_ratings_onehot.yaml # rungs 03 (delays) and 04 (splines) were reverted
 
 derive:
   cross:

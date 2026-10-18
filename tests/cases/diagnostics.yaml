@@ -1,0 +1,59 @@
+# Declarative test cases for src/modeling/diagnostics.py: ladder keep/revert verdicts.
+#
+# Each case gives per-fold scores for a parent and a child run; the board is built from them.
+
+ladder:
+    - id: small_consistent_gain_kept_with_paired_noise
+      keep_rule: { min_gain: 0.0005, noise: paired_std }
+      parent_folds: [0.940, 0.945, 0.950, 0.955] # fold std ~0.0056 (fold difficulty)
+      child_folds: [0.9407, 0.9457, 0.9506, 0.9557] # +0.0006..0.0007 on every fold
+      expected: keep
+
+    - id: same_gain_reverted_with_fold_std_noise
+      keep_rule: { min_gain: 0.0005, noise: fold_std }
+      parent_folds: [0.940, 0.945, 0.950, 0.955]
+      child_folds: [0.9407, 0.9457, 0.9506, 0.9557]
+      expected: revert
+
+    - id: below_min_gain_reverted
+      keep_rule: { min_gain: 0.0005, noise: paired_std }
+      parent_folds: [0.940, 0.945, 0.950, 0.955]
+      child_folds: [0.9402, 0.9452, 0.9502, 0.9552]
+      expected: revert
+
+    - id: noisy_gain_reverted
+      keep_rule: { min_gain: 0.0005, noise: paired_std }
+      parent_folds: [0.940, 0.945, 0.950, 0.955]
+      child_folds: [0.9442, 0.9420, 0.9542, 0.9520] # mean +0.0006, deltas swing ±0.004
+      expected: revert
+
+    - id: min_gain_only
+      keep_rule: { min_gain: 0.0005, noise: none }
+      parent_folds: [0.940, 0.945, 0.950, 0.955]
+      child_folds: [0.9442, 0.9420, 0.9542, 0.9520]
+      expected: keep
+
+# Per-run diagnostic tables on a tiny, hand-checkable example.
+per_run:
+    y: [0, 0, 0, 1, 1, 1]
+    p: [0.1, 0.4, 0.6, 0.35, 0.8, 0.9]
+    labels: [not satisfied, satisfied]
+    expected:
+        auc: 0.7777778 # 7 of 9 (positive, negative) pairs ranked correctly
+        roc_starts_at: [0.0, 0.0]
+        roc_ends_at: [1.0, 1.0]
+        calibration_rows: 6 # n summed over bins equals the row count
+        confusion: # at threshold 0.5: [actual][predicted] counts
+            not satisfied: { not satisfied: 2, satisfied: 1 }
+            satisfied: { not satisfied: 1, satisfied: 2 }
+        histogram_share_per_class: 1.0
+
+# Grid runs on the leaderboard -> tidy grid table.
+grid_table:
+    board: # run_id, name, cv_mean
+        - [r1, "lr_08[C=0.1,l1_ratio=0.0,solver=lbfgs]", 0.948]
+        - [r2, "lr_08[C=1.0,l1_ratio=1.0,solver=liblinear]", 0.949]
+        - [r3, lr_06, 0.947]
+    expected:
+        - { C: 0.1, penalty: L2, solver: lbfgs }
+        - { C: 1.0, penalty: L1, solver: liblinear }

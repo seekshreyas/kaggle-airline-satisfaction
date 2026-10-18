@@ -247,6 +247,12 @@ __pycache__/
 # experiment leaderboard is small and has no private data: track it
 !reports/experiments/leaderboard.csv
 
+# experiment artefacts and derived data (may contain competition data)
+reports/experiments/**/*.parquet
+data/interim/
+data/submissions/
+logs/
+
 # Mac OS
 .DS_Store
 Icon?

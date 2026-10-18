@@ -1,6 +1,7 @@
 # Phase 2 · rung 01: ratings as categories (captures the wifi U-shape, 0 = N/A, 3->4 step).
 name: lr_01_ratings_onehot
 description: Ratings one-hot encoded instead of linear
+label: "Treat each rating level separately" # plain-language name used in reports
 extends: lr_00_baseline.yaml
 
 encode:

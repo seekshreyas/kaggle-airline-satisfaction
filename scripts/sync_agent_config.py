@@ -16,6 +16,11 @@ SCOPES = {
     "python": "**/*.py",
     "sql": "**/*.sql",
     "notebooks": "notebooks/**",
+    "testing": "tests/**",
+    "configs": "configs/**",
+    "planning": "plan/**",
+    "visualization": "src/viz/**",
+    "reporting": "src/reporting/**,configs/reports/**,reports/**",
 }
 
 

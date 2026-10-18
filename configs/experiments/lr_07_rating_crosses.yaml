@@ -1,12 +1,19 @@
 # Phase 2 · rung 07: rating effects may differ by trip purpose.
+# Extends lr_06 (the winner under the paired keep rule). The class crosses from rung 05
+# were reverted, so only the travel x rating pairs are added, with their own encode group.
 name: lr_07_rating_crosses
 description: Type of travel x {wifi, online boarding} crosses
+label: "Rating effects by trip type" # plain-language name used in reports
 extends: lr_06_rating_aggregates.yaml
 
 derive:
   cross:
-    pairs:                                  # lists replace, so the rung 05 pairs are restated
-      - [class, type_of_travel]
-      - [class, customer_type]
+    pairs:
       - [type_of_travel, inflight_wifi_service]
       - [type_of_travel, online_boarding]
+
+encode:
+  crosses:
+    cols: "@derived_categorical"
+    steps:
+      - onehot: {handle_unknown: ignore}

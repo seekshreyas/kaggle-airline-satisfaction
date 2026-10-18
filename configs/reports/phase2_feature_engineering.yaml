@@ -1,0 +1,26 @@
+# Executive report: Phase 2 (feature engineering). Rendered with Deckset.
+# Regenerate with: pixi run report configs/reports/phase2_feature_engineering.yaml
+
+title: Predicting Airline Passenger Satisfaction
+subtitle: Phase 2 · What drives the prediction
+audience: Executive
+output: reports/phase2_feature_engineering.md # markdown deck (images are linked relatively)
+plots_dir: reports/plots # PNGs are written here, prefixed with `plot_prefix`
+plot_prefix: phase2
+
+# Runs compared in the deck (latest run of each experiment is used).
+baseline: lr_00_baseline
+winner: lr_06_rating_aggregates # current best under the keep rule
+
+# Deckset global commands (the theme can also be picked in the app).
+deckset:
+    theme: null # e.g. "Plain Jane" or "Fira, 3"; null = choose in Deckset
+    footer: Airline satisfaction · Phase 2
+    slidenumbers: true
+    autoscale: true
+
+# PNG export (16:9-ish so a chart fills the slide under an action title).
+image:
+    width: 1600
+    height: 800
+    scale: 2

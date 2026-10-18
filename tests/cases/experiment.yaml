@@ -1,0 +1,16 @@
+# Declarative test cases for src/modeling/experiment.py: expand_grid
+
+expand_grid:
+    - id: dict_is_full_product
+      grid: { C: [0.1, 1.0], l1_ratio: [0.0, 1.0] }
+      expected_names: ["x[C=0.1,l1_ratio=0.0]", "x[C=0.1,l1_ratio=1.0]", "x[C=1.0,l1_ratio=0.0]", "x[C=1.0,l1_ratio=1.0]"]
+
+    - id: list_is_union_of_products
+      grid:
+          - { C: [0.1, 1.0], solver: [lbfgs] }
+          - { C: [1.0], solver: [liblinear] }
+      expected_names: ["x[C=0.1,solver=lbfgs]", "x[C=1.0,solver=lbfgs]", "x[C=1.0,solver=liblinear]"]
+
+    - id: no_grid_returns_config
+      grid: null
+      expected_names: [x]

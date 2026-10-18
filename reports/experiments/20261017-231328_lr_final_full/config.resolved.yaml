@@ -1,0 +1,168 @@
+competition: playground-series-s6e10
+data:
+  dir: data/raw/playground-series-s6e10
+  files:
+    train: train.csv
+    test: test.csv
+    sample_submission: sample_submission.csv
+  subset: full
+id_col: id
+target: satisfaction
+task: binary
+metric: roc_auc
+extra_metrics:
+- log_loss
+- accuracy
+seed: 42
+columns:
+  style: snake_case
+  overrides: {}
+schema:
+  continuous:
+  - age
+  - flight_distance
+  - departure_delay_in_minutes
+  - arrival_delay_in_minutes
+  ordinal:
+  - inflight_wifi_service
+  - departure_arrival_time_convenient
+  - ease_of_online_booking
+  - gate_location
+  - food_and_drink
+  - online_boarding
+  - seat_comfort
+  - inflight_entertainment
+  - on_board_service
+  - leg_room_service
+  - baggage_handling
+  - checkin_service
+  - cleanliness
+  categorical:
+  - gender
+  - customer_type
+  - type_of_travel
+  - class
+display_names:
+  age: Age
+  flight_distance: Flight distance
+  departure_delay_in_minutes: Departure delay
+  arrival_delay_in_minutes: Arrival delay
+  inflight_wifi_service: Wi-Fi rating
+  departure_arrival_time_convenient: Schedule convenience rating
+  ease_of_online_booking: Online booking rating
+  gate_location: Gate location rating
+  food_and_drink: Food & drink rating
+  online_boarding: Online boarding rating
+  seat_comfort: Seat comfort rating
+  inflight_entertainment: Entertainment rating
+  on_board_service: On-board service rating
+  leg_room_service: Leg room rating
+  baggage_handling: Baggage handling rating
+  checkin_service: Check-in rating
+  cleanliness: Cleanliness rating
+  gender: Gender
+  customer_type: Customer type
+  type_of_travel: Trip type
+  class: Cabin class
+  rating_mean: Average rating
+  rating_min: Lowest rating
+  rating_max: Highest rating
+  rating_std: Rating spread
+  rating_n_zero: Services left unrated
+  rating_n_ge4: Services rated 4-5
+  grp_digital_mean: Avg digital rating
+  grp_comfort_mean: Avg comfort rating
+  grp_service_mean: Avg service rating
+  grp_airport_mean: Avg airport rating
+rating_groups:
+  digital:
+  - inflight_wifi_service
+  - ease_of_online_booking
+  - online_boarding
+  comfort:
+  - seat_comfort
+  - inflight_entertainment
+  - leg_room_service
+  - cleanliness
+  service:
+  - on_board_service
+  - checkin_service
+  - baggage_handling
+  - food_and_drink
+  airport:
+  - gate_location
+  - departure_arrival_time_convenient
+randomization:
+  salt: s6e10-v1
+  key: id
+  stratify: true
+splits:
+  dev_frac: 0.25
+  holdout_frac: 0.2
+cv:
+  n_splits: 4
+keep_rule:
+  min_gain: 0.0005
+  noise: paired_std
+paths:
+  experiments_dir: reports/experiments
+  submissions_dir: data/submissions
+name: lr_final_full
+description: Final features and model on full data (holdout still excluded from CV)
+label: Final model on all data
+derive:
+  rating_aggregates:
+    cols: '@ordinal'
+    groups: '@rating_groups'
+    exclude_zero: true
+    stats:
+    - mean
+    - min
+    - max
+    - std
+    counts:
+    - n_zero
+    - n_ge4
+encode:
+  continuous:
+    cols: '@continuous'
+    steps:
+    - impute:
+        strategy: median
+    - scale:
+        method: standard
+  ratings:
+    cols: '@ordinal'
+    steps:
+    - onehot:
+        handle_unknown: ignore
+  categorical:
+    cols: '@categorical'
+    steps:
+    - onehot:
+        drop: if_binary
+        handle_unknown: ignore
+  derived_numeric:
+    cols: '@derived_numeric'
+    steps:
+    - impute:
+        strategy: median
+    - scale:
+        method: standard
+remainder: drop
+model:
+  name: logreg
+  params:
+    C: 1.0
+    l1_ratio: 0.0
+    solver: lbfgs
+    max_iter: 3000
+score_holdout: true
+predict_test: true
+lineage:
+- competition
+- lr_00_baseline
+- lr_01_ratings_onehot
+- lr_06_rating_aggregates
+- lr_final_full
+config_path: /Users/shreyas/Workspace/Workspace-Personal/Kaggle/Kaggle-Airline-Satisfaction/configs/experiments/lr_final_full.yaml

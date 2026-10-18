@@ -1,0 +1,28 @@
+# Declarative test cases for src/reporting (labels + Deckset markdown builder)
+
+pretty_feature: # uses display_names from configs/competition.yaml
+    - { feature: inflight_wifi_service_0, expected: "Wi-Fi rating: not rated" }
+    - { feature: online_boarding_5, expected: "Online boarding rating: rated 5" }
+    - { feature: type_of_travel_Personal Travel, expected: "Trip type: Personal Travel" }
+    - { feature: num__rating_mean, expected: Average rating }
+    - { feature: flag__unknown_thing__is0, expected: Unknown thing is0 }
+
+sentence_case:
+    - { label: Customer type, expected: customer type }
+    - { label: Wi-Fi rating, expected: Wi-Fi rating }
+
+deck:
+    theme: Fira, 3
+    footer: Test footer
+    slides:
+        - blocks: ["# Title"]
+          notes: [First note, Second note]
+          commands: ["[.hide-footer]"]
+        - blocks: ["## Chart"]
+          image: { path: plots/a.png, alt: A chart }
+    expected_header: "theme: Fira, 3\nfooter: Test footer\nslidenumbers: true\nautoscale: true"
+    expected_contains:
+        - "\n\n---\n\n"
+        - "^ First note\n\n^ Second note"
+        - "![inline fill alt(A chart)](plots/a.png)"
+        - "[.hide-footer]\n\n# Title"

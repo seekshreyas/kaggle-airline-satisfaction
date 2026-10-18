@@ -1,12 +1,13 @@
 # Phase 2 · rung 04: splines for the age inverted-U and the ~1,500 mi distance threshold.
+# Extends lr_01 (not lr_03): rung 03 delays was reverted (+0.0001 < keep rule).
 name: lr_04_splines
 description: Splines on age and flight distance
-extends: lr_03_delays.yaml
+label: "Curved effects for age & distance" # plain-language name used in reports
+extends: lr_01_ratings_onehot.yaml
 
 encode:
   continuous:
     steps:
       - impute: {strategy: median}
-      - log1p: {cols: [departure_delay_in_minutes, arrival_delay_in_minutes]}
       - spline: {cols: [age, flight_distance], n_knots: 6, degree: 3}
       - scale: {method: standard}

@@ -1,7 +1,8 @@
 # Phase 2 · rung 06: overall-experience summary of the 13 ratings.
 name: lr_06_rating_aggregates
 description: N/A-aware rating stats overall and per rating group
-extends: lr_05_crosses.yaml
+label: "Add overall rating summaries" # plain-language name used in reports
+extends: lr_01_ratings_onehot.yaml # rungs 03-05 were reverted
 
 derive:
   rating_aggregates:

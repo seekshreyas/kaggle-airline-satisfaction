@@ -79,3 +79,6 @@ def test_assign_splits(case, data):
     assert abs(out["is_dev"].mean() - exp["dev_share"]) <= exp["tolerance"]
     assert not (out["is_holdout"] & out["is_dev"]).any(), "holdout and dev overlap"
     assert ((out["fold"] >= 0) == out["is_dev"]).all(), "folds only on the dev subset"
+    assert ((out["fold_full"] >= 0) == ~out["is_holdout"]).all(), "full folds on every non-holdout row"
+    sizes = out.loc[~out["is_holdout"]].groupby("fold_full").size()
+    assert sizes.max() - sizes.min() <= 2, "full folds balanced"

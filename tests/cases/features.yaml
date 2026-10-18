@@ -1,0 +1,87 @@
+# Declarative test cases for src/features and src/modeling/validate.py
+
+# Derive blocks: small input table -> exact new columns.
+derive:
+    - id: missing_flag
+      block: missing_flag
+      params: { cols: [arrival_delay_in_minutes] }
+      rows:
+          arrival_delay_in_minutes: [5.0, null, 0.0]
+      expected:
+          flag__arrival_delay_in_minutes__isna: [0, 1, 0]
+
+    - id: zero_flag_respects_exclude
+      block: zero_flag
+      params: { cols: [wifi, baggage], exclude: [baggage] }
+      rows:
+          wifi: [0, 3, 5]
+          baggage: [1, 2, 3]
+      expected:
+          flag__wifi__is0: [1, 0, 0]
+
+    - id: ge_flag_threshold_4
+      block: ge_flag
+      params: { cols: [seat], threshold: 4 }
+      rows:
+          seat: [3, 4, 5]
+      expected:
+          flag__seat__ge4: [0, 1, 1]
+
+    - id: cross_two_columns
+      block: cross
+      params: { pairs: [[class, travel]] }
+      rows:
+          class: [Business, Eco]
+          travel: [Personal, Business]
+      expected:
+          cat__class__x__travel: ["Business|Personal", "Eco|Business"]
+
+    - id: delay_features_missing_arrival_uses_departure
+      block: delay_features
+      rows:
+          departure_delay_in_minutes: [0, 10, 5]
+          arrival_delay_in_minutes: [0.0, 4.0, null]
+      expected:
+          num__delay_diff: [0.0, -6.0, 0.0]
+          num__total_delay_log1p: [0.0, 2.7080502, 2.3978953] # log1p(dep + arr)
+          flag__is_delayed: [0, 1, 1]
+
+    - id: rating_aggregates_ignore_zeros
+      block: rating_aggregates
+      params:
+          cols: [a, b, c]
+          groups: { ab: [a, b] }
+          stats: [mean, min]
+          counts: [n_zero, n_ge4]
+      rows:
+          a: [0, 4]
+          b: [2, 5]
+          c: [4, 1]
+      expected:
+          num__rating_mean: [3.0, 3.3333333333]
+          num__rating_min: [2.0, 1.0]
+          num__grp_ab_mean: [2.0, 4.5]
+          num__rating_n_zero: [1, 0] # zeros are counted on the raw ratings
+          num__rating_n_ge4: [1, 2]
+
+# Synthetic competition-shaped data for pipeline and CV tests (no real data).
+synthetic:
+    n_rows: 2000
+    ordinal_values: [0, 1, 2, 3, 4, 5]
+    categorical_values:
+        gender: [Male, Female]
+        customer_type: [Loyal Customer, disloyal Customer]
+        type_of_travel: [Business travel, Personal Travel]
+        class: [Business, Eco, Eco Plus]
+    unseen_in_test: { class: First } # a category the pipeline never saw while fitting
+
+# Every experiment config must build and behave on synthetic data.
+pipelines:
+    - lr_00_baseline
+    - lr_01_ratings_onehot
+    - lr_02_rating_flags
+    - lr_03_delays
+    - lr_04_splines
+    - lr_05_crosses
+    - lr_06_rating_aggregates
+    - lr_07_rating_crosses

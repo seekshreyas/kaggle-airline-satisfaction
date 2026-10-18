@@ -1,6 +1,7 @@
 # Phase 2 · rung 02: alternative to 01. Ratings stay linear; add N/A and >=4 flags.
 name: lr_02_rating_flags
 description: Linear ratings plus is0 / ge4 flags
+label: "Flag 'not rated' and 'rated 4+'" # plain-language name used in reports
 extends: lr_00_baseline.yaml
 
 derive:

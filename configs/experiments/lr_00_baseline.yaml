@@ -1,6 +1,7 @@
 # Phase 2 · rung 00: reference point. Simple encodings, model held fixed from here on.
 name: lr_00_baseline
 description: Impute + scale numerics, ratings as numbers, one-hot categoricals
+label: "Baseline: all inputs as-is" # plain-language name used in reports
 extends: ../competition.yaml
 
 data:

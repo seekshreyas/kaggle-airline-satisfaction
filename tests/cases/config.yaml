@@ -1,0 +1,65 @@
+# Declarative test cases for src/utils/config.py
+
+deep_merge:
+    - id: dicts_merge_recursively
+      base: { encode: { ratings: { cols: "@ordinal", steps: [scale] } } }
+      child: { encode: { ratings: { steps: [onehot] } } }
+      expected: { encode: { ratings: { cols: "@ordinal", steps: [onehot] } } }
+
+    - id: lists_replace
+      base: { pairs: [[a, b]] }
+      child: { pairs: [[c, d]] }
+      expected: { pairs: [[c, d]] }
+
+    - id: child_null_overrides
+      base: { model: { grid: { C: [1, 10] } } }
+      child: { model: { grid: null } }
+      expected: { model: { grid: null } }
+
+    - id: new_keys_added
+      base: { derive: { zero_flag: {} } }
+      child: { derive: { ge_flag: { threshold: 4 } } }
+      expected: { derive: { zero_flag: {}, ge_flag: { threshold: 4 } } }
+
+expand_ref:
+    - id: schema_group
+      value: "@categorical"
+      expected: [gender, customer_type, type_of_travel, class]
+
+    - id: top_level_key
+      value: "@rating_groups"
+      expected_keys: [digital, comfort, service, airport]
+
+    - id: derived_group_wins
+      value: "@derived_flags"
+      derived: { derived_flags: [x__is0] }
+      expected: [x__is0]
+
+    - id: plain_value_unchanged
+      value: [age]
+      expected: [age]
+
+    - id: unknown_ref_raises
+      value: "@nope"
+      raises: { error: KeyError, match: Unknown reference }
+
+# Resolve real configs and check selected keys of the merged result.
+load_config:
+    - id: lr_04_inherits_competition_and_parents
+      path: configs/experiments/lr_04_splines.yaml
+      expected:
+          # lr_04 extends lr_01 because rung 03 (delays) was reverted by the keep rule
+          lineage: [competition, lr_00_baseline, lr_01_ratings_onehot, lr_04_splines]
+          cv.n_splits: 4
+          randomization.salt: s6e10-v1
+          encode.ratings.steps: [{ onehot: { handle_unknown: ignore } }]
+          derive: {}
+
+    - id: lr_final_switches_to_full_data
+      path: configs/experiments/lr_final_full.yaml
+      expected:
+          lineage: [competition, lr_00_baseline, lr_01_ratings_onehot, lr_06_rating_aggregates, lr_final_full]
+          data.subset: full
+          model.params.solver: lbfgs
+          score_holdout: true
+          predict_test: true

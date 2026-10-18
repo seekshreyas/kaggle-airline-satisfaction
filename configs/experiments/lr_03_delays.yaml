@@ -2,6 +2,7 @@
 # NOTE: `extends` points at the 01/02 winner; update it after reviewing those runs.
 name: lr_03_delays
 description: Missing flag, log1p on delays, delay difference
+label: "Clean up delay data" # plain-language name used in reports
 extends: lr_01_ratings_onehot.yaml
 
 derive:

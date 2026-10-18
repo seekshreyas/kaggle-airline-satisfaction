@@ -111,10 +111,11 @@ def fold_indices(folds: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:
 
 def assign_splits(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     """
-    Add `is_holdout`, `is_dev` and `fold` columns to the labelled training frame.
+    Add `is_holdout`, `is_dev`, `fold` and `fold_full` columns to the labelled training frame.
 
     `cfg` is the competition config (randomization, splits, cv, target). Holdout rows
-    get is_dev=False and fold=-1. Folds are assigned within the dev subset.
+    get is_dev=False and fold=fold_full=-1. `fold` is assigned within the dev subset
+    (Phases 2-3); `fold_full` over every non-holdout row (Phase 4), with its own salt.
     """
     rnd, splits = cfg["randomization"], cfg["splits"]
     key, salt = rnd["key"], rnd["salt"]
@@ -137,6 +138,11 @@ def assign_splits(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     out["fold"] = -1
     out.loc[dev.index, "fold"] = hash_folds(
         dev[key], cfg["cv"]["n_splits"], purpose_salt(salt, "cv"), dev_strata
+    )
+
+    out["fold_full"] = -1
+    out.loc[rest.index, "fold_full"] = hash_folds(
+        rest[key], cfg["cv"]["n_splits"], purpose_salt(salt, "cv-full"), rest_strata
     )
     return out
 
