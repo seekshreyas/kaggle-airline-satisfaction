@@ -1,3 +1,8 @@
+# /// script
+# dependencies = [
+#     "marimo>=0.25.1",
+# ]
+# ///
 import marimo
 
 __generated_with = "0.25.1"
